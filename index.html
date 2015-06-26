@@ -383,7 +383,8 @@ function onKeyDown(event) {
         path4.fullySelected = !path4.fullySelected;
         path4.fillColor = path4.fullySelected ? null : self.path4Color ;    
         path5.fullySelected = !path5.fullySelected;
-        path5.fillColor = path4.fullySelected ? null : self.path5Color ;          
+        path5.fillColor = path4.fullySelected ? null : self.path5Color ;
+        if (path.fullySelected === self.beerColor) { $('#canvas').css('background-color', '#ffffff') } else { $('#canvas').css('background-color', '#FF0000') }          
       }
     
 }
@@ -656,9 +657,23 @@ function initStats() {
   return stats;
 }
     </script>
+
+<style type="text/css">
+  .credit {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 6969;
+    color: white;
+    font-family: monospace;
+    text-decoration: none;
+  }
+</style>
+
 </head>
 <body>
     <canvas id="canvas" resize></canvas>
     <div id="Stats-output"></div>
+    <a class="credit" href="http://wearecirro.com" target="_BLANK">Made with ❤ by Cirro</a>
 </body>
 </html>
