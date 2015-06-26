@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Chain</title>
+    <link rel="stylesheet" href="assets/cssz/style.css">
+    <script type="text/javascript" src="assets/javascriptz/hammer.min.js"></script>
+    <script type="text/javascript" src="assets/javascriptz/stats.min.js"></script>
+    <script type="text/javascript" src="assets/javascriptz/jquery.js"></script>
+    <script type="text/javascript" src="assets/javascriptz/paper-full.js"></script>    
+    <script type="text/paperscript" canvas="canvas">
+function initialize() {
+  self.stats           = initStats(),
+  self.pagebottom      = [ view.size.width/2, 0],
+  self.pagetop         = [view.size.width/2, view.size.height],
+  // self.pagesize     = view.size * [1.2, 1],
+  self.mouseLocation   = view.size.height * .5,
+  ///// HOW EXTREME THE SPLASHES ARE
+  //// Min splash power
+  self.minSplash       = 30,
+  /// Max splash power
+  self.maxSplash       = 150,
+
+  self.cursorBelowBeer = false,
+  self.cursorBelowPath2= false,
+  self.cursorBelowPath3= false,
+  self.cursorBelowPath4= false,
+  self.cursorBelowPath5= false,
+  self.restLength      = Math.floor(window.innerHeight*.8),
+  self.beerColor       = '#A000C0',
+  self.path2Color      = '#0000FF',
+  self.path3Color      = '#008000',
+  self.path4Color      = '#FFFF00',
+  self.path5Color      = '#FF8000',
+  self.isMobile        = false,
+  self.panning         = false,
+  // self.panBelow     = null,
+  self.values          = {
+                        amount: 16,
+                        dampeningFactor: 0.00025,
+                        spread: .01,
+                        k: .025 // tension
+                      },
+  self.values2          = {
+                        amount: 18,
+                        dampeningFactor: 0.00025,
+                        spread: .01,
+                        k: .025 // tension
+                      },   
+  self.values3          = {
+                        amount: 21,
+                        dampeningFactor: 0.00025,
+                        spread: .01,
+                        k: .025 // tension
+                      },
+  self.values4          = {
+                        amount: 25,
+                        dampeningFactor: 0.00025,
+                        spread: .01,
+                        k: .025 // tension
+                      },       
+  self.values5          = {
+                        amount: 30,
+                        dampeningFactor: 0.00025,
+                        spread: .01,
+                        k: .025 // tension
+                      },                           
+  self.path,
+  self.path2,
+  self.path3,
+  self.path4,
+  self.path5,
+  self.springs,
+  self.springs2,
+  self.springs3,
+  self.springs4,
+  self.springs5;
+
+  // Test for presence of mobile device
+  if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+    self.isMobile = true;
+  }
+
+  // Initialize is fired on page refresh, if path exists destroy and rebuild
+  if (self.path) {
+    self.path.remove();
+  }
+
+  if (self.path2) {
+    self.path2.remove();
+  }
+  
+  if (self.path3) {
+    self.path3.remove();
+  }
+
+  if (self.path4) {
+    self.path4.remove();
+  }
+
+  if (self.path5) {
+    self.path5.remove();
+  }  
+
+  pagesize = view.bounds.size * [2, 1];
+  self.path = createPath();
+  self.path2 = createPath2();
+  self.path3 = createPath3();
+  self.path4 = createPath4();
+  self.path5 = createPath5();
+  var pathGroup = new Group({children: [self.path5, self.path4, self.path3, self.path2, self.path]});
+
+  // project.activeLayer.insertChild(0, path);
+}
+
+
+
+// =======================================================================================
+      // Beer Surface Path drawing / updating
+// =======================================================================================
+
+
+// Spring characteristics
+var Spring = function(point, velocity) {
+  this.restLength = self.restLength;
+  this.k = self.values.k;
+  this.currentHeight = this.restLength;
+  this.point = point;
+  this.velocity = velocity ? velocity : 0;
+};
+
+// Spring update function
+Spring.prototype.update = function() {
+  var x = this.currentHeight - this.restLength;
+  // speed += accel, accel = -k*x -ccx dampeningFactor * velocity (Hooks law + dampening) -- integrate using Eulers
+  this.velocity += -this.k * x - values.dampeningFactor * this.velocity; 
+  // Euler Integration again for position from speed
+  this.point.y += this.velocity;
+};
+
+function createPath5() {
+  var path5 = new Path({
+    top: self.pagetop,
+    bottom: self.pagebottom,
+    fillColor: self.path5Color
+  });
+  // self.beerGroup.addChild(path5);
+  self.springs5 = [];
+  for (var i = 0; i <= values5.amount; i++) {
+    var segment = path5.add(new Point(i / values5.amount, 0.15) * pagesize);
+    var point = segment.point;
+    if (i === 0 || i === values5.amount)
+      point.y += pagesize.height;
+    point.px = point.x;
+    point.py = point.y;
+    // The first two and last two points are fixed:
+    point.fixed = i < 2 || i > values5.amount - 2;
+    if (i > 0) {
+      point.springIndex = i;
+      var spring = new Spring(point, 0);
+      springs5.push(spring);
+    }
+  }
+  path5.position.x -= pagesize.width / 4;
+  return path5;
+}
+
+function createPath4() {
+  var path4 = new Path({
+    top: self.pagetop,
+    bottom: self.pagebottom,
+    fillColor: self.path4Color
+  });
+  // self.beerGroup.addChild(path4);
+  self.springs4 = [];
+  for (var i = 0; i <= values4.amount; i++) {
+    var segment = path4.add(new Point(i / values4.amount, 0.3) * pagesize);
+    var point = segment.point;
+    if (i === 0 || i === values4.amount)
+      point.y += pagesize.height;
+    point.px = point.x;
+    point.py = point.y;
+    // The first two and last two points are fixed:
+    point.fixed = i < 2 || i > values4.amount - 2;
+    if (i > 0) {
+      point.springIndex = i;
+      var spring = new Spring(point, 0);
+      springs4.push(spring);
+    }
+  }
+  path4.position.x -= pagesize.width / 4;
+  return path4;
+}
+
+function createPath3() {
+  var path3 = new Path({
+    top: self.pagetop,
+    bottom: self.pagebottom,
+    fillColor: self.path3Color
+  });
+  // self.beerGroup.addChild(path3);
+  self.springs3 = [];
+  for (var i = 0; i <= values3.amount; i++) {
+    var segment = path3.add(new Point(i / values3.amount, 0.45) * pagesize);
+    var point = segment.point;
+    if (i === 0 || i === values3.amount)
+      point.y += pagesize.height;
+    point.px = point.x;
+    point.py = point.y;
+    // The first two and last two points are fixed:
+    point.fixed = i < 2 || i > values3.amount - 2;
+    if (i > 0) {
+      point.springIndex = i;
+      var spring = new Spring(point, 0);
+      springs3.push(spring);
+    }
+  }
+  path3.position.x -= pagesize.width / 4;
+  return path3;
+}
+
+function createPath2() {
+  var path2 = new Path({
+    top: self.pagetop,
+    bottom: self.pagebottom,
+    fillColor: self.path2Color
+  });
+  // self.beerGroup.addChild(path2);
+  self.springs2 = [];
+  for (var i = 0; i <= values2.amount; i++) {
+    var segment = path2.add(new Point(i / values2.amount, 0.6) * pagesize);
+    var point = segment.point;
+    if (i === 0 || i === values2.amount)
+      point.y += pagesize.height;
+    point.px = point.x;
+    point.py = point.y;
+    // The first two and last two points are fixed:
+    point.fixed = i < 2 || i > values2.amount - 2;
+    if (i > 0) {
+      point.springIndex = i;
+      var spring = new Spring(point, 0);
+      springs2.push(spring);
+    }
+  }
+  path2.position.x -= pagesize.width / 4;
+  return path2;
+}
+
+// Create Path for Beer surfice (Collection of springs)
+function createPath() {
+  var path = new Path({
+    top: self.pagetop,
+    bottom: self.pagebottom,
+    fillColor: self.beerColor
+  });
+  // self.beerGroup.addChild(path);
+  self.springs = [];
+  for (var i = 0; i <= values.amount; i++) {
+    var segment = path.add(new Point(i / values.amount, 0.75) * pagesize);
+    var point = segment.point;
+    if (i === 0 || i === values.amount)
+      point.y += pagesize.height;
+    point.px = point.x;
+    point.py = point.y;
+    // The first two and last two points are fixed:
+    point.fixed = i < 2 || i > values.amount - 2;
+    if (i > 0) {
+      point.springIndex = i;
+      var spring = new Spring(point, 0);
+      springs.push(spring);
+    }
+  }
+  path.position.x -= pagesize.width / 4;
+  return path;
+}
+
+
+
+// ==================================================================
+//    Mouse Events
+// ==================================================================
+function onMouseMove(event) {
+
+  var mousePlungeSpeed = event.delta.y,
+      mouseLocation = event.point.y;
+  path1MouseMove(event, mousePlungeSpeed, mouseLocation);
+  path2MouseMove(event, mousePlungeSpeed, mouseLocation);
+  path3MouseMove(event, mousePlungeSpeed, mouseLocation);
+  path4MouseMove(event, mousePlungeSpeed, mouseLocation);
+  path5MouseMove(event, mousePlungeSpeed, mouseLocation);
+}
+
+function path1MouseMove(event, mousePlungeSpeed, mouseLocation) {
+  var location         = self.path.getNearestLocation(event.point),
+      segment          = location.segment,
+      point            = segment.point,  
+      wasBelow         = cursorBelowBeer;
+
+  if (!point.fixed) {
+    mouseLocation > location.point.y ? self.cursorBelowBeer = false :  self.cursorBelowBeer = true;
+    if(cursorBelowBeer != wasBelow && wasBelow && cursorBelowBeer == false) { 
+      splash(point, mousePlungeSpeed);
+    } else if (cursorBelowBeer != wasBelow && wasBelow == false && cursorBelowBeer) {
+      splashUp(point, mousePlungeSpeed);
+    }
+  }  
+}
+
+function path2MouseMove(event, mousePlungeSpeed, mouseLocation) {
+  var location        = self.path2.getNearestLocation(event.point),
+      segment         = location.segment,
+      point           = segment.point,
+      wasBelow        = cursorBelowPath2;
+
+  if (!point.fixed) {
+    mouseLocation > location.point.y ? self.cursorBelowPath2 = false :  self.cursorBelowPath2 = true;
+    if(cursorBelowPath2 != wasBelow && wasBelow && cursorBelowPath2 == false) { 
+      splash(point, mousePlungeSpeed);
+    } else if (cursorBelowBeer != wasBelow && wasBelow == false && cursorBelowBeer) {
+      splashUp(point, mousePlungeSpeed);
+    }
+  } 
+}
+
+function path3MouseMove(event, mousePlungeSpeed, mouseLocation) {
+  var location        = self.path3.getNearestLocation(event.point),
+      segment         = location.segment,
+      point           = segment.point,
+      wasBelow        = cursorBelowPath3;
+
+  if (!point.fixed) {
+    mouseLocation > location.point.y ? self.cursorBelowPath3 = false :  self.cursorBelowPath3 = true;
+    if(cursorBelowPath3 != wasBelow && wasBelow && cursorBelowPath3 == false) { 
+      splash(point, mousePlungeSpeed);
+    } else if (cursorBelowBeer != wasBelow && wasBelow == false && cursorBelowBeer) {
+      splashUp(point, mousePlungeSpeed);
+    }
+  } 
+}
+
+function path4MouseMove(event, mousePlungeSpeed, mouseLocation) {
+  var location        = self.path4.getNearestLocation(event.point),
+      segment         = location.segment,
+      point           = segment.point,
+      wasBelow        = cursorBelowPath4;
+
+  if (!point.fixed) {
+    mouseLocation > location.point.y ? self.cursorBelowPath4 = false :  self.cursorBelowPath4 = true;
+    if(cursorBelowPath4 != wasBelow && wasBelow && cursorBelowPath4 == false) { 
+      splash(point, mousePlungeSpeed);
+    } else if (cursorBelowBeer != wasBelow && wasBelow == false && cursorBelowBeer) {
+      splashUp(point, mousePlungeSpeed);
+    }
+  } 
+}
+
+function path5MouseMove(event, mousePlungeSpeed, mouseLocation) {
+  var location        = self.path5.getNearestLocation(event.point),
+      segment         = location.segment,
+      point           = segment.point,
+      wasBelow        = cursorBelowPath5;
+
+  if (!point.fixed) {
+    mouseLocation > location.point.y ? self.cursorBelowPath5 = false :  self.cursorBelowPath5 = true;
+    if(cursorBelowPath5 != wasBelow && wasBelow && cursorBelowPath5 == false) { 
+      splash(point, mousePlungeSpeed);
+    } else if (cursorBelowBeer != wasBelow && wasBelow == false && cursorBelowBeer) {
+      splashUp(point, mousePlungeSpeed);
+    }
+  } 
+}
+
+// Show path points if space key is entered
+// ******Probably change this for production??*****
+function onKeyDown(event) {
+      if (event.key == 'space') {
+        path.fullySelected = !path.fullySelected;
+        path.fillColor = path.fullySelected ? null : self.beerColor ;
+        path2.fullySelected = !path2.fullySelected;
+        path2.fillColor = path2.fullySelected ? null : self.path2Color ;
+        path3.fullySelected = !path3.fullySelected;
+        path3.fillColor = path2.fullySelected ? null : self.path3Color ;  
+        path4.fullySelected = !path4.fullySelected;
+        path4.fillColor = path4.fullySelected ? null : self.path4Color ;    
+        path5.fullySelected = !path5.fullySelected;
+        path5.fillColor = path4.fullySelected ? null : self.path5Color ;          
+      }
+    
+}
+
+// On mouse going down from the top through surface of fluid
+function splash(point, mousePlungeSpeed) {
+  if(mousePlungeSpeed < self.minSplash)  { mousePlungeSpeed = self.minSplash; }
+  if(mousePlungeSpeed > self.maxSplash) { mousePlungeSpeed = self.maxSplash; }
+  point.y += mousePlungeSpeed;
+}
+
+// On mouse going from bottom through surface of fluid
+function splashUp(point, mousePlungeSpeed) {
+  if(Math.abs(mousePlungeSpeed) < self.minSplash)  { mousePlungeSpeed = -self.minSplash; }
+  if(Math.abs(mousePlungeSpeed) > self.maxSplash) { mousePlungeSpeed = -self.maxSplash; }
+  point.y += mousePlungeSpeed;
+}
+
+function panSplash(event) {
+  var tapPoint = new Point(event.changedPointers[0].pageX, event.changedPointers[0].pageY),
+      location = self.path.getNearestLocation(tapPoint)
+      segment  = location.segment,
+      point    = segment.point;
+  if (!point.fixed && !self.panning) {
+    // Without untapped timout function tapping can be spammed and get all sorts of crazy
+    self.panning = true;
+    setTimeout(function(){ self.panning = false; }, 150);
+    if( self.panBelow != null && currentPanBelow != self.panBelow ) {
+      if( currentPanBelow == true ) {
+        splash(point, Math.abs(event.velocityY) * 40);
+      } else {
+        splashUp(point, Math.abs(event.velocityY) * 40)
+      }
+    }
+  }
+}
+
+// ========================================================================
+//    Update Function and animation actions
+// ========================================================================
+
+// This is the animation loops, runs 60 times per second -- ideally
+function onFrame(event) {
+  updateWave(self.path);
+  updateWave2(self.path2);
+  updateWave3(self.path3);
+  updateWave4(self.path4);
+  updateWave5(self.path5);
+  stats.update();
+}
+
+function updateWave(path) {
+  for (var i = 4; i <= values.amount -4; i++ ) {
+    springs[i].update();
+    if( i == values.amount -4 ) {
+      propagateWave(path);
+    }
+  }
+  path.smooth();
+}
+
+function updateWave2(path2) {
+  for (var i = 4; i <= values2.amount -4; i++ ) {
+    springs2[i].update();
+    if( i == values2.amount -4 ) {
+      console.log('updateWave2')
+      propagateWave2(path2);
+    }
+  }
+  path2.smooth();
+}
+
+function updateWave3(path3) {
+  for (var i = 4; i <= values3.amount -4; i++ ) {
+    springs3[i].update();
+    if( i == values3.amount -4 ) {
+      console.log('updateWave3')
+      propagateWave3(path3);
+    }
+  }
+  path3.smooth();
+}
+
+function updateWave4(path4) {
+  for (var i = 4; i <= values4.amount -4; i++ ) {
+    springs4[i].update();
+    if( i == values4.amount -4 ) {
+      console.log('updateWave4')
+      propagateWave4(path4);
+    }
+  }
+  path4.smooth();
+}
+
+
+function updateWave5(path5) {
+  for (var i = 4; i <= values5.amount -4; i++ ) {
+    springs5[i].update();
+    if( i == values5.amount -4 ) {
+      console.log('updateWave5')
+      propagateWave5(path5);
+    }
+  }
+  path5.smooth();
+}
+
+
+function propagateWave(path) {
+  var leftDeltas  = [],
+      rightDeltas = [];
+  for (var j = 0; j < 3; j++ ) {
+    for (var i = 3; i < springs.length - 3; i++ ) {
+      if(!springs[i].point.fixed && !springs[i+1].point.fixed && !springs[i-1].point.fixed) {
+        if ( i > 0) {
+          leftDeltas[i] = values.spread * (springs[i].point.y - springs[i - 1].point.y);
+          springs[i - 1].velocity += leftDeltas[i]
+        }
+        if ( i < springs.length - 1) {
+          rightDeltas[i] = values.spread * (springs[i].point.y - springs [i + 1].point.y);
+          springs[i + 1].velocity += rightDeltas[i];
+        }
+      }
+    }
+    for (var i = 3; i <  springs.length - 3; i++) {
+      if(!springs[i].point.fixed && !springs[i+1].point.fixed && !springs[i-1].point.fixed) {
+        if (i > 0) {
+          springs[i - 1].point.y += leftDeltas[i];
+        }
+        if (i < springs.Length - 1) {
+          springs[i + 1].point.y += rightDeltas[i];
+        }
+      }
+    }
+  }
+}
+
+function propagateWave2(path2) {
+  console.log('propwave2', self.springs2);
+  var leftDeltas  = [],
+      rightDeltas = [];
+  for (var j = 0; j < 3; j++ ) {
+    for (var i = 3; i < self.springs2.length - 3; i++ ) {
+      if(!self.springs2[i].point.fixed && !self.springs2[i+1].point.fixed && !self.springs2[i-1].point.fixed) {
+        if ( i > 0) {
+          leftDeltas[i] = values.spread * (self.springs2[i].point.y - self.springs2[i - 1].point.y);
+          self.springs2[i - 1].velocity += leftDeltas[i]
+        }
+        if ( i < self.springs2.length - 1) {
+          rightDeltas[i] = values.spread * (self.springs2[i].point.y - self.springs2 [i + 1].point.y);
+          self.springs2[i + 1].velocity += rightDeltas[i];
+        }
+      }
+    }
+    for (var i = 3; i <  self.springs2.length - 3; i++) {
+      if(!self.springs2[i].point.fixed && !self.springs2[i+1].point.fixed && !self.springs2[i-1].point.fixed) {
+        if (i > 0) {
+          self.springs2[i - 1].point.y += leftDeltas[i];
+        }
+        if (i < self.springs2.Length - 1) {
+          self.springs2[i + 1].point.y += rightDeltas[i];
+        }
+      }
+    }
+  }
+}
+
+function propagateWave3(path3) {
+  console.log('propwave3', self.springs3);
+  var leftDeltas  = [],
+      rightDeltas = [];
+  for (var j = 0; j < 3; j++ ) {
+    for (var i = 3; i < self.springs3.length - 3; i++ ) {
+      if(!self.springs3[i].point.fixed && !self.springs3[i+1].point.fixed && !self.springs3[i-1].point.fixed) {
+        if ( i > 0) {
+          leftDeltas[i] = values.spread * (self.springs3[i].point.y - self.springs3[i - 1].point.y);
+          self.springs3[i - 1].velocity += leftDeltas[i]
+        }
+        if ( i < self.springs3.length - 1) {
+          rightDeltas[i] = values.spread * (self.springs3[i].point.y - self.springs3[i + 1].point.y);
+          self.springs3[i + 1].velocity += rightDeltas[i];
+        }
+      }
+    }
+    for (var i = 3; i <  self.springs3.length - 3; i++) {
+      if(!self.springs3[i].point.fixed && !self.springs3[i+1].point.fixed && !self.springs3[i-1].point.fixed) {
+        if (i > 0) {
+          self.springs3[i - 1].point.y += leftDeltas[i];
+        }
+        if (i < self.springs3.Length - 1) {
+          self.springs3[i + 1].point.y += rightDeltas[i];
+        }
+      }
+    }
+  }
+}
+
+function propagateWave4(path4) {
+  console.log('propwave3', self.springs4);
+  var leftDeltas  = [],
+      rightDeltas = [];
+  for (var j = 0; j < 3; j++ ) {
+    for (var i = 3; i < self.springs4.length - 3; i++ ) {
+      if(!self.springs4[i].point.fixed && !self.springs4[i+1].point.fixed && !self.springs4[i-1].point.fixed) {
+        if ( i > 0) {
+          leftDeltas[i] = values.spread * (self.springs4[i].point.y - self.springs4[i - 1].point.y);
+          self.springs4[i - 1].velocity += leftDeltas[i]
+        }
+        if ( i < self.springs4.length - 1) {
+          rightDeltas[i] = values.spread * (self.springs4[i].point.y - self.springs4[i + 1].point.y);
+          self.springs4[i + 1].velocity += rightDeltas[i];
+        }
+      }
+    }
+    for (var i = 3; i <  self.springs4.length - 3; i++) {
+      if(!self.springs4[i].point.fixed && !self.springs4[i+1].point.fixed && !self.springs4[i-1].point.fixed) {
+        if (i > 0) {
+          self.springs4[i - 1].point.y += leftDeltas[i];
+        }
+        if (i < self.springs4.Length - 1) {
+          self.springs4[i + 1].point.y += rightDeltas[i];
+        }
+      }
+    }
+  }
+}
+
+function propagateWave5(path5) {
+  console.log('propwave3', self.springs5);
+  var leftDeltas  = [],
+      rightDeltas = [];
+  for (var j = 0; j < 3; j++ ) {
+    for (var i = 3; i < self.springs5.length - 3; i++ ) {
+      if(!self.springs5[i].point.fixed && !self.springs5[i+1].point.fixed && !self.springs5[i-1].point.fixed) {
+        if ( i > 0) {
+          leftDeltas[i] = values.spread * (self.springs5[i].point.y - self.springs5[i - 1].point.y);
+          self.springs5[i - 1].velocity += leftDeltas[i]
+        }
+        if ( i < self.springs5.length - 1) {
+          rightDeltas[i] = values.spread * (self.springs5[i].point.y - self.springs5[i + 1].point.y);
+          self.springs5[i + 1].velocity += rightDeltas[i];
+        }
+      }
+    }
+    for (var i = 3; i <  self.springs5.length - 3; i++) {
+      if(!self.springs5[i].point.fixed && !self.springs5[i+1].point.fixed && !self.springs5[i-1].point.fixed) {
+        if (i > 0) {
+          self.springs5[i - 1].point.y += leftDeltas[i];
+        }
+        if (i < self.springs5.Length - 1) {
+          self.springs5[i + 1].point.y += rightDeltas[i];
+        }
+      }
+    }
+  }
+}
+
+
+function onResize() {
+  initialize();
+}
+// Dislays Frames per Second
+function initStats() {
+  var stats = new Stats();
+  stats.setMode(0); // 0: fps, 1: ms
+  // Align top-left
+  stats.domElement.style.position = 'absolute';
+  stats.domElement.style.left     = '0px';
+  stats.domElement.style.top      = '0px';
+  document.getElementById("Stats-output").appendChild(stats.domElement);
+  return stats;
+}
+    </script>
+</head>
+<body>
+    <canvas id="canvas" resize></canvas>
+    <div id="Stats-output"></div>
+</body>
+</html>
